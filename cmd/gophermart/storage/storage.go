@@ -1,0 +1,40 @@
+package storage
+
+import (
+	"github.com/vivalavoka/go-market/cmd/gophermart/config"
+	postgresdb "github.com/vivalavoka/go-market/cmd/gophermart/storage/repositories/postgres"
+	"github.com/vivalavoka/go-market/cmd/gophermart/users"
+)
+
+type MetricsRepoInterface interface {
+	Close()
+	CheckConnection() bool
+	CreateUser(*users.User) string
+	GetUserByLogin(string) (users.User, error)
+	GetUserById(string) (users.User, error)
+}
+
+type Storage struct {
+	Repo MetricsRepoInterface
+}
+
+func New(config config.Config) (*Storage, error) {
+	var repo MetricsRepoInterface
+	var err error
+
+	repo, err = postgresdb.New(config)
+
+	if err != nil {
+		return nil, err
+	}
+
+	storage := &Storage{
+		Repo: repo,
+	}
+
+	return storage, nil
+}
+
+func (s *Storage) Close() {
+	s.Repo.Close()
+}
