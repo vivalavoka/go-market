@@ -12,9 +12,10 @@ import (
 )
 
 type PostgresDB struct {
-	config     config.Config
-	connection *sqlx.DB
-	createStmt *sql.Stmt
+	config         config.Config
+	connection     *sqlx.DB
+	createUserStmt *sql.Stmt
+	linkOrderStmt  *sql.Stmt
 }
 
 func New(cfg config.Config) (*PostgresDB, error) {
@@ -31,8 +32,12 @@ func New(cfg config.Config) (*PostgresDB, error) {
 		return nil, fmt.Errorf("migration failed: %w", err)
 	}
 
-	postgres.createStmt, err = postgres.connection.Prepare(
+	postgres.createUserStmt, err = postgres.connection.Prepare(
 		`INSERT INTO users (login, password) VALUES ($1, $2) RETURNING user_id;`,
+	)
+
+	postgres.linkOrderStmt, err = postgres.connection.Prepare(
+		`INSERT INTO user_orders (user_id, order_id) VALUES ($1, $2);`,
 	)
 
 	if err != nil {
@@ -43,13 +48,40 @@ func New(cfg config.Config) (*PostgresDB, error) {
 }
 
 func (r *PostgresDB) migration() error {
+	var err error
+
+	err = r.createUserTable()
+	if err != nil {
+		return err
+	}
+
+	err = r.createUserOrderTable()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *PostgresDB) createUserTable() error {
 	rows, err := r.connection.Query(`
 		CREATE TABLE IF NOT EXISTS users (
 			user_id SERIAL,
 			login VARCHAR UNIQUE,
 			password VARCHAR
-		);`,
-	)
+		);`)
+	if rows.Err() != nil {
+		return rows.Err()
+	}
+	return err
+}
+
+func (r *PostgresDB) createUserOrderTable() error {
+	rows, err := r.connection.Query(`
+		CREATE TABLE IF NOT EXISTS user_orders (
+			user_id VARCHAR PRIMARY KEY,
+			order_id VARCHAR UNIQUE
+		);`)
 	if rows.Err() != nil {
 		return rows.Err()
 	}
@@ -66,7 +98,7 @@ func (r *PostgresDB) CheckConnection() bool {
 }
 
 func (r *PostgresDB) CreateUser(user *users.User) string {
-	_, err := r.createStmt.Exec(user.Login, user.Password)
+	_, err := r.createUserStmt.Exec(user.Login, user.Password)
 
 	if err != nil {
 		pgError := err.(*pg.Error)
@@ -75,26 +107,43 @@ func (r *PostgresDB) CreateUser(user *users.User) string {
 	return ""
 }
 
-func (r *PostgresDB) GetUserByLogin(login string) (users.User, error) {
-	var data users.User
-	err := r.connection.Get(&data, `SELECT user_id, login, password FROM users WHERE login = $1;`, login)
+func (r *PostgresDB) GetUserByLogin(login string) (*users.User, error) {
+	var data []users.User
+	err := r.connection.Select(&data, `SELECT user_id, login, password FROM users WHERE login = $1 LIMIT 1;`, login)
 
-	log.Info(data)
-	if err != nil {
-		return users.User{}, err
+	if len(data) == 0 {
+		return nil, nil
 	}
 
-	return data, nil
+	if err != nil {
+		return nil, err
+	}
+
+	return &data[0], nil
 }
 
-func (r *PostgresDB) GetUserById(userId string) (users.User, error) {
-	var data users.User
-	err := r.connection.Get(&data, `SELECT user_id, login, password FROM users WHERE user_id = $1;`, userId)
+func (r *PostgresDB) GetOrder(orderId users.PostgresPK) (*users.UserOrder, error) {
+	var data []users.UserOrder
+	err := r.connection.Select(&data, `SELECT user_id, order_id FROM user_orders WHERE order_id = $1 LIMIT 1;`, orderId)
 
-	log.Info(data)
-	if err != nil {
-		return users.User{}, err
+	if len(data) == 0 {
+		return nil, nil
 	}
 
-	return data, nil
+	if err != nil {
+		return nil, err
+	}
+
+	return &data[0], nil
+}
+
+func (r *PostgresDB) LinkOrder(userOrder *users.UserOrder) string {
+	_, err := r.linkOrderStmt.Exec(userOrder.UserId, userOrder.OrderID)
+
+	if err != nil {
+		pgError := err.(*pg.Error)
+		log.Error(pgError)
+		return fmt.Sprint(pgError.Code)
+	}
+	return ""
 }

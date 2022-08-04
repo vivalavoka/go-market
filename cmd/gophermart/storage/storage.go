@@ -10,8 +10,9 @@ type MetricsRepoInterface interface {
 	Close()
 	CheckConnection() bool
 	CreateUser(*users.User) string
-	GetUserByLogin(string) (users.User, error)
-	GetUserById(string) (users.User, error)
+	GetUserByLogin(string) (*users.User, error)
+	GetOrder(users.PostgresPK) (*users.UserOrder, error)
+	LinkOrder(*users.UserOrder) string
 }
 
 type Storage struct {
