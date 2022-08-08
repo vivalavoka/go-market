@@ -1,6 +1,10 @@
 package users
 
-import "github.com/dgrijalva/jwt-go"
+import (
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+)
 
 type PostgresPK int64
 
@@ -19,12 +23,17 @@ type User struct {
 	Balance  int16      `json:"balance" db:"balance"`
 }
 
-type UserBalance struct {
-	UserId PostgresPK `json:"user_id" db:"user_id"`
-	Value  PostgresPK `json:"value" db:"value"`
-}
+const (
+	New        string = "NEW"
+	Processing        = "PROCESSING"
+	Invalid           = "INVALID"
+	Processed         = "PROCESSED"
+)
 
 type UserOrder struct {
-	UserId  PostgresPK `json:"user_id" db:"user_id"`
-	OrderID PostgresPK `json:"order_id" db:"order_id"`
+	UserId     PostgresPK `json:"user_id,omitempty" db:"user_id"`
+	Number     PostgresPK `json:"number" db:"number"`
+	Accrual    int16      `json:"accrual,omitempty" db:"accrual"`
+	Status     string     `json:"status" db:"status"`
+	UploadedAt time.Time  `json:"uploaded_at" db:"uploaded_at"`
 }

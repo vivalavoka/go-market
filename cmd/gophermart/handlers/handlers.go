@@ -139,7 +139,7 @@ func (h *Handlers) LinkOrder(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	h.storage.Repo.LinkOrder(&users.UserOrder{UserId: session.ID, OrderID: users.PostgresPK(orderId)})
+	h.storage.Repo.LinkOrder(&users.UserOrder{UserId: session.ID, Number: users.PostgresPK(orderId), Status: users.New})
 
 	w.WriteHeader(http.StatusAccepted)
 }
@@ -153,6 +153,12 @@ func (h *Handlers) OrderList(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(pgErr.Error()))
 		return
 	}
+
+	if len(orders) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	response, err := json.Marshal(orders)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

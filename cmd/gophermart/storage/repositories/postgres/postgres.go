@@ -38,7 +38,7 @@ func New(cfg config.Config) (*PostgresDB, error) {
 	)
 
 	postgres.linkOrderStmt, err = postgres.connection.Prepare(
-		`INSERT INTO user_orders (user_id, order_id) VALUES ($1, $2);`,
+		`INSERT INTO user_orders (user_id, number, status) VALUES ($1, $2, $3);`,
 	)
 
 	if err != nil {
@@ -81,8 +81,11 @@ func (r *PostgresDB) createUserTable() error {
 func (r *PostgresDB) createUserOrderTable() error {
 	rows, err := r.connection.Query(`
 		CREATE TABLE IF NOT EXISTS user_orders (
-			user_id VARCHAR PRIMARY KEY,
-			order_id VARCHAR UNIQUE
+			user_id VARCHAR,
+			number VARCHAR UNIQUE,
+			accrual INTEGER DEFAULT 0,
+			status VARCHAR,
+			uploaded_at TIMESTAMPTZ DEFAULT now()
 		);`)
 	if rows.Err() != nil {
 		return rows.Err()
@@ -142,7 +145,7 @@ func (r *PostgresDB) GetUserBalance(userId users.PostgresPK) (*users.User, error
 
 func (r *PostgresDB) GetOrder(orderId users.PostgresPK) (*users.UserOrder, error) {
 	var data []users.UserOrder
-	err := r.connection.Select(&data, `SELECT user_id, order_id FROM user_orders WHERE order_id = $1 LIMIT 1;`, orderId)
+	err := r.connection.Select(&data, `SELECT number, status, accrual, uploaded_at FROM user_orders WHERE order_id = $1 LIMIT 1;`, orderId)
 
 	if len(data) == 0 {
 		return nil, nil
@@ -157,7 +160,7 @@ func (r *PostgresDB) GetOrder(orderId users.PostgresPK) (*users.UserOrder, error
 
 func (r *PostgresDB) GetOrderList(userId users.PostgresPK) ([]users.UserOrder, error) {
 	var data []users.UserOrder
-	err := r.connection.Select(&data, `SELECT user_id, order_id FROM user_orders WHERE user_id = $1`, userId)
+	err := r.connection.Select(&data, `SELECT number, status, accrual, uploaded_at FROM user_orders WHERE user_id = $1 ORDER BY uploaded_at ASC;`, userId)
 
 	if err != nil {
 		return nil, err
@@ -167,7 +170,7 @@ func (r *PostgresDB) GetOrderList(userId users.PostgresPK) ([]users.UserOrder, e
 }
 
 func (r *PostgresDB) LinkOrder(userOrder *users.UserOrder) string {
-	_, err := r.linkOrderStmt.Exec(userOrder.UserId, userOrder.OrderID)
+	_, err := r.linkOrderStmt.Exec(userOrder.UserId, userOrder.Number, userOrder.Status)
 
 	if err != nil {
 		pgError := err.(*pg.Error)
