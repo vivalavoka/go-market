@@ -13,9 +13,10 @@ type UserClaims struct {
 }
 
 type User struct {
-	ID       PostgresPK `json:"user_id" db:"user_id"`
-	Login    string     `json:"login" db:"login"`
-	Password string     `json:"password" db:"password"`
+	ID       PostgresPK `json:"user_id,omitempty" db:"user_id"`
+	Login    string     `json:"login,omitempty" db:"login"`
+	Password string     `json:"password,omitempty" db:"password"`
+	Balance  int16      `json:"balance" db:"balance"`
 }
 
 type UserBalance struct {
@@ -25,5 +26,5 @@ type UserBalance struct {
 
 type UserOrder struct {
 	UserId  PostgresPK `json:"user_id" db:"user_id"`
-	OrderID PostgresPK `json:"value" db:"value"`
+	OrderID PostgresPK `json:"order_id" db:"order_id"`
 }

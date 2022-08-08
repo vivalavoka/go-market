@@ -15,9 +15,20 @@ func (h *Handlers) SetRoutes(r chi.Router) chi.Router {
 		ri.Get("/", h.OrderList)
 	})
 
-	r.Get("/api/user/balance", h.GetBalance)
-	r.Post("/api/user/withdraw", h.Withdraw)
-	r.Get("/api/user/withdrawals", h.Withdrawals)
+	r.Route("/api/user/balance", func(ri chi.Router) {
+		ri.Use(middlewares.CheckToken)
+		ri.Get("/", h.GetBalance)
+	})
+
+	r.Route("/api/user/withdraw", func(ri chi.Router) {
+		ri.Use(middlewares.CheckToken)
+		ri.Post("/", h.Withdraw)
+	})
+
+	r.Route("/api/user/withdrawals", func(ri chi.Router) {
+		ri.Use(middlewares.CheckToken)
+		ri.Get("/", h.Withdrawals)
+	})
 
 	return r
 }

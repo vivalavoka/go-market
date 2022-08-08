@@ -145,12 +145,46 @@ func (h *Handlers) LinkOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) OrderList(w http.ResponseWriter, r *http.Request) {
+	session := middlewares.GetUserClaim(r.Context())
+
+	orders, pgErr := h.storage.Repo.GetOrderList(session.ID)
+	if pgErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(pgErr.Error()))
+		return
+	}
+	response, err := json.Marshal(orders)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("[]"))
+	w.Write(response)
 }
 
 func (h *Handlers) GetBalance(w http.ResponseWriter, r *http.Request) {
+	session := middlewares.GetUserClaim(r.Context())
+
+	balance, pgErr := h.storage.Repo.GetUserBalance(session.ID)
+	if pgErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(pgErr.Error()))
+		return
+	}
+
+	response, err := json.Marshal(balance)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }
 
 func (h *Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {

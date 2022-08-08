@@ -12,10 +12,11 @@ import (
 )
 
 type PostgresDB struct {
-	config         config.Config
-	connection     *sqlx.DB
-	createUserStmt *sql.Stmt
-	linkOrderStmt  *sql.Stmt
+	config            config.Config
+	connection        *sqlx.DB
+	createUserStmt    *sql.Stmt
+	createBalanceStmt *sql.Stmt
+	linkOrderStmt     *sql.Stmt
 }
 
 func New(cfg config.Config) (*PostgresDB, error) {
@@ -68,7 +69,8 @@ func (r *PostgresDB) createUserTable() error {
 		CREATE TABLE IF NOT EXISTS users (
 			user_id SERIAL,
 			login VARCHAR UNIQUE,
-			password VARCHAR
+			password VARCHAR,
+			balance INTEGER DEFAULT 0
 		);`)
 	if rows.Err() != nil {
 		return rows.Err()
@@ -122,6 +124,22 @@ func (r *PostgresDB) GetUserByLogin(login string) (*users.User, error) {
 	return &data[0], nil
 }
 
+func (r *PostgresDB) GetUserBalance(userId users.PostgresPK) (*users.User, error) {
+	var data []users.User
+	err := r.connection.Select(&data, `SELECT balance FROM users WHERE user_id = $1 LIMIT 1;`, userId)
+
+	log.Info(data)
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &data[0], nil
+}
+
 func (r *PostgresDB) GetOrder(orderId users.PostgresPK) (*users.UserOrder, error) {
 	var data []users.UserOrder
 	err := r.connection.Select(&data, `SELECT user_id, order_id FROM user_orders WHERE order_id = $1 LIMIT 1;`, orderId)
@@ -135,6 +153,17 @@ func (r *PostgresDB) GetOrder(orderId users.PostgresPK) (*users.UserOrder, error
 	}
 
 	return &data[0], nil
+}
+
+func (r *PostgresDB) GetOrderList(userId users.PostgresPK) ([]users.UserOrder, error) {
+	var data []users.UserOrder
+	err := r.connection.Select(&data, `SELECT user_id, order_id FROM user_orders WHERE user_id = $1`, userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func (r *PostgresDB) LinkOrder(userOrder *users.UserOrder) string {
