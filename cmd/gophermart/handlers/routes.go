@@ -30,5 +30,6 @@ func (h *Handlers) SetRoutes(r chi.Router) chi.Router {
 		ri.Get("/", h.Withdrawals)
 	})
 
+	r.Get("/api/orders/{number}", h.EchoAccrualHandler)
 	return r
 }

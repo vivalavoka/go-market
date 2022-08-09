@@ -13,8 +13,9 @@ type MetricsRepoInterface interface {
 	GetUserByLogin(string) (*users.User, error)
 	GetUserBalance(users.PostgresPK) (*users.User, error)
 	GetOrder(users.PostgresPK) (*users.UserOrder, error)
-	LinkOrder(*users.UserOrder) string
+	UpsertOrder(*users.UserOrder) string
 	GetOrderList(users.PostgresPK) ([]users.UserOrder, error)
+	GetOrdersByStatus(status string) ([]users.UserOrder, error)
 }
 
 type Storage struct {

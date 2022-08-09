@@ -11,25 +11,27 @@ import (
 )
 
 type Server struct {
+	config   config.Config
 	storage  *storage.Storage
 	handlers *handlers.Handlers
 }
 
-func New(storage *storage.Storage) *Server {
+func New(cfg config.Config, storage *storage.Storage) *Server {
 	return &Server{
+		config:  cfg,
 		storage: storage,
 	}
 }
 
-func (s *Server) Start(cfg config.Config) {
+func (s *Server) Start() {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	s.handlers = handlers.New(cfg, s.storage)
+	s.handlers = handlers.New(s.config, s.storage)
 	s.handlers.SetRoutes(r)
 
-	http.ListenAndServe(cfg.Address, r)
+	http.ListenAndServe(s.config.Address, r)
 }

@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/vivalavoka/go-market/cmd/gophermart/agent"
 	"github.com/vivalavoka/go-market/cmd/gophermart/config"
 	server "github.com/vivalavoka/go-market/cmd/gophermart/http"
 	"github.com/vivalavoka/go-market/cmd/gophermart/storage"
@@ -33,6 +34,9 @@ func main() {
 		os.Exit(1)
 	}()
 
-	http := server.New(stg)
-	http.Start(cfg)
+	a := agent.New(cfg, stg)
+	go a.Start()
+
+	http := server.New(cfg, stg)
+	http.Start()
 }

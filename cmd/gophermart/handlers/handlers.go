@@ -3,11 +3,13 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-chi/chi/v5"
 	"github.com/vivalavoka/go-market/cmd/gophermart/config"
 	"github.com/vivalavoka/go-market/cmd/gophermart/http/middlewares"
 	"github.com/vivalavoka/go-market/cmd/gophermart/storage"
@@ -23,6 +25,13 @@ func New(cfg config.Config, storage *storage.Storage) *Handlers {
 	return &Handlers{
 		storage: storage,
 	}
+}
+
+func (h *Handlers) EchoAccrualHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	number := chi.URLParam(r, "number")
+	w.Write([]byte(fmt.Sprintf(`{"order": "%s","status": "PROCESSED","accrual": 500}`, number)))
 }
 
 func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +148,7 @@ func (h *Handlers) LinkOrder(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	h.storage.Repo.LinkOrder(&users.UserOrder{UserId: session.ID, Number: users.PostgresPK(orderId), Status: users.New})
+	h.storage.Repo.UpsertOrder(&users.UserOrder{UserId: session.ID, Number: users.PostgresPK(orderId), Status: users.New})
 
 	w.WriteHeader(http.StatusAccepted)
 }

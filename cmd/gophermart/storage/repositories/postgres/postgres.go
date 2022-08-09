@@ -16,7 +16,7 @@ type PostgresDB struct {
 	connection        *sqlx.DB
 	createUserStmt    *sql.Stmt
 	createBalanceStmt *sql.Stmt
-	linkOrderStmt     *sql.Stmt
+	upsertOrderStmt   *sql.Stmt
 }
 
 func New(cfg config.Config) (*PostgresDB, error) {
@@ -37,8 +37,10 @@ func New(cfg config.Config) (*PostgresDB, error) {
 		`INSERT INTO users (login, password) VALUES ($1, $2) RETURNING user_id;`,
 	)
 
-	postgres.linkOrderStmt, err = postgres.connection.Prepare(
-		`INSERT INTO user_orders (user_id, number, status) VALUES ($1, $2, $3);`,
+	postgres.upsertOrderStmt, err = postgres.connection.Prepare(
+		`INSERT INTO user_orders (user_id, number, status, accrual)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (number) DO UPDATE SET status = $3, accrual = $4;`,
 	)
 
 	if err != nil {
@@ -158,6 +160,16 @@ func (r *PostgresDB) GetOrder(orderId users.PostgresPK) (*users.UserOrder, error
 	return &data[0], nil
 }
 
+func (r *PostgresDB) UpsertOrder(userOrder *users.UserOrder) string {
+	_, err := r.upsertOrderStmt.Exec(userOrder.UserId, userOrder.Number, userOrder.Status, userOrder.Accrual)
+
+	if err != nil {
+		pgError := err.(*pg.Error)
+		return fmt.Sprint(pgError.Code)
+	}
+	return ""
+}
+
 func (r *PostgresDB) GetOrderList(userId users.PostgresPK) ([]users.UserOrder, error) {
 	var data []users.UserOrder
 	err := r.connection.Select(&data, `SELECT number, status, accrual, uploaded_at FROM user_orders WHERE user_id = $1 ORDER BY uploaded_at ASC;`, userId)
@@ -169,13 +181,13 @@ func (r *PostgresDB) GetOrderList(userId users.PostgresPK) ([]users.UserOrder, e
 	return data, nil
 }
 
-func (r *PostgresDB) LinkOrder(userOrder *users.UserOrder) string {
-	_, err := r.linkOrderStmt.Exec(userOrder.UserId, userOrder.Number, userOrder.Status)
+func (r *PostgresDB) GetOrdersByStatus(status string) ([]users.UserOrder, error) {
+	var data []users.UserOrder
+	err := r.connection.Select(&data, `SELECT user_id, number, accrual, status FROM user_orders WHERE status = $1 ORDER BY uploaded_at ASC;`, status)
 
 	if err != nil {
-		pgError := err.(*pg.Error)
-		log.Error(pgError)
-		return fmt.Sprint(pgError.Code)
+		return nil, err
 	}
-	return ""
+
+	return data, nil
 }
