@@ -6,7 +6,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	pg "github.com/lib/pq"
-	log "github.com/sirupsen/logrus"
 	"github.com/vivalavoka/go-market/cmd/gophermart/config"
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
 )
@@ -133,7 +132,6 @@ func (r *PostgresDB) GetUserBalance(userId users.PostgresPK) (*users.User, error
 	var data []users.User
 	err := r.connection.Select(&data, `SELECT balance FROM users WHERE user_id = $1 LIMIT 1;`, userId)
 
-	log.Info(data)
 	if len(data) == 0 {
 		return nil, nil
 	}

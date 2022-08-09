@@ -11,7 +11,7 @@ func (h *Handlers) SetRoutes(r chi.Router) chi.Router {
 
 	r.Route("/api/user/orders", func(ri chi.Router) {
 		ri.Use(middlewares.CheckToken)
-		ri.Post("/", h.LinkOrder)
+		ri.Post("/", h.CreateOrder)
 		ri.Get("/", h.OrderList)
 	})
 

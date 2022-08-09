@@ -111,7 +111,7 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
-func (h *Handlers) LinkOrder(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r.Body)
 	param := buf.String()
