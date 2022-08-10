@@ -17,10 +17,11 @@ type UserClaims struct {
 }
 
 type User struct {
-	ID       PostgresPK `json:"user_id,omitempty" db:"user_id"`
-	Login    string     `json:"login,omitempty" db:"login"`
-	Password string     `json:"password,omitempty" db:"password"`
-	Balance  int16      `json:"balance" db:"balance"`
+	ID        PostgresPK `json:"user_id,omitempty" db:"user_id"`
+	Login     string     `json:"login,omitempty" db:"login"`
+	Password  string     `json:"password,omitempty" db:"password"`
+	Current   int16      `json:"current" db:"current"`
+	Withdrawn int16      `json:"withdrawn" db:"withdrawn"`
 }
 
 const (
@@ -36,4 +37,11 @@ type UserOrder struct {
 	Accrual    int16      `json:"accrual,omitempty" db:"accrual"`
 	Status     string     `json:"status" db:"status"`
 	UploadedAt time.Time  `json:"uploaded_at" db:"uploaded_at"`
+}
+
+type UserWithdraw struct {
+	UserId      PostgresPK `json:"user_id,omitempty" db:"user_id"`
+	Number      string     `json:"order" db:"number"`
+	Sum         int16      `json:"sum,omitempty" db:"sum"`
+	ProcessedAt time.Time  `json:"processed_at" db:"processed_at"`
 }

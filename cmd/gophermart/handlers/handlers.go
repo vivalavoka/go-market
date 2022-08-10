@@ -203,7 +203,74 @@ func (h *Handlers) GetBalance(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
+	var params *users.UserWithdraw
+	session := middlewares.GetUserClaim(r.Context())
+
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	params.UserId = session.ID
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	orderId, err := strconv.ParseInt(params.Number, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if !luhn.Valid(orderId) {
+		http.Error(w, "Invalid order id format", http.StatusUnprocessableEntity)
+		return
+	}
+
+	user, err := h.storage.Repo.GetUserBalance(session.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if user.Current < params.Sum {
+		http.Error(w, "Not enough funds", http.StatusPaymentRequired)
+		return
+	}
+
+	h.storage.Repo.DecreaseUserBalance(session.ID, params.Sum)
+	h.storage.Repo.CreateWithdraw(*params)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }
 
 func (h *Handlers) Withdrawals(w http.ResponseWriter, r *http.Request) {
+	session := middlewares.GetUserClaim(r.Context())
+
+	withdrawals, pgErr := h.storage.Repo.GetWithdrawals(session.ID)
+	if pgErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(pgErr.Error()))
+		return
+	}
+
+	if len(withdrawals) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	response, err := json.Marshal(withdrawals)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }

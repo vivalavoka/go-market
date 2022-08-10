@@ -4,7 +4,4 @@
 приложение.
 
 ## TODO:
-1) Add update balance
-2) Add withdraw endpoint
-3) Add withdrawal enpoint
 4) Try to minimize routes.go

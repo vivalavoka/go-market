@@ -41,7 +41,6 @@ func (a *Agent) Start() {
 	for {
 		<-syncTicker.C
 
-		log.Info("Start sync")
 		newOrders, err := a.storage.Repo.GetOrdersByStatus(users.New)
 		if err != nil {
 			log.Error(err)
@@ -88,7 +87,7 @@ func (a *Agent) processOrderByAccrual(order users.UserOrder, accrual client.Accr
 		{
 			order.Status = users.Processed
 			order.Accrual = int16(accrual.Accrual)
-			a.storage.Repo.UpdateUserBalance(order.UserId, order.Accrual)
+			a.storage.Repo.IncreaseUserBalance(order.UserId, order.Accrual)
 		}
 	}
 
