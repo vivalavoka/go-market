@@ -85,8 +85,11 @@ func (a *Agent) processOrderByAccrual(order users.UserOrder, accrual client.Accr
 	case "INVALID":
 		order.Status = users.Invalid
 	case "PROCESSED":
-		order.Status = users.Processed
-		order.Accrual = int16(accrual.Accrual)
+		{
+			order.Status = users.Processed
+			order.Accrual = int16(accrual.Accrual)
+			a.storage.Repo.UpdateUserBalance(order.UserId, order.Accrual)
+		}
 	}
 
 	a.storage.Repo.UpsertOrder(&order)

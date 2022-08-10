@@ -6,6 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	pg "github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 	"github.com/vivalavoka/go-market/cmd/gophermart/config"
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
 )
@@ -14,8 +15,8 @@ type PostgresDB struct {
 	config            config.Config
 	connection        *sqlx.DB
 	createUserStmt    *sql.Stmt
-	createBalanceStmt *sql.Stmt
 	upsertOrderStmt   *sql.Stmt
+	updateBalanceStmt *sql.Stmt
 }
 
 func New(cfg config.Config) (*PostgresDB, error) {
@@ -40,6 +41,10 @@ func New(cfg config.Config) (*PostgresDB, error) {
 		`INSERT INTO user_orders (user_id, number, status, accrual)
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (number) DO UPDATE SET status = $3, accrual = $4;`,
+	)
+
+	postgres.updateBalanceStmt, err = postgres.connection.Prepare(
+		`UPDATE users SET balance = balance + $1 WHERE user_id = $2;`,
 	)
 
 	if err != nil {
@@ -141,6 +146,18 @@ func (r *PostgresDB) GetUserBalance(userId users.PostgresPK) (*users.User, error
 	}
 
 	return &data[0], nil
+}
+
+func (r *PostgresDB) UpdateUserBalance(userID users.PostgresPK, value int16) string {
+	log.Info(userID)
+	log.Info(value)
+	_, err := r.updateBalanceStmt.Exec(value, userID)
+
+	if err != nil {
+		pgError := err.(*pg.Error)
+		return fmt.Sprint(pgError.Code)
+	}
+	return ""
 }
 
 func (r *PostgresDB) GetOrder(orderId users.PostgresPK) (*users.UserOrder, error) {
