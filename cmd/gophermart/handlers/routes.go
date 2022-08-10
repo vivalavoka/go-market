@@ -9,25 +9,13 @@ func (h *Handlers) SetRoutes(r chi.Router) chi.Router {
 	r.Post("/api/user/register", h.Register)
 	r.Post("/api/user/login", h.Login)
 
-	r.Route("/api/user/orders", func(ri chi.Router) {
+	r.Route("/api/user", func(ri chi.Router) {
 		ri.Use(middlewares.CheckToken)
-		ri.Post("/", h.CreateOrder)
-		ri.Get("/", h.OrderList)
-	})
-
-	r.Route("/api/user/balance", func(ri chi.Router) {
-		ri.Use(middlewares.CheckToken)
-		ri.Get("/", h.GetBalance)
-	})
-
-	r.Route("/api/user/withdraw", func(ri chi.Router) {
-		ri.Use(middlewares.CheckToken)
-		ri.Post("/", h.Withdraw)
-	})
-
-	r.Route("/api/user/withdrawals", func(ri chi.Router) {
-		ri.Use(middlewares.CheckToken)
-		ri.Get("/", h.Withdrawals)
+		ri.Post("/orders", h.CreateOrder)
+		ri.Get("/orders", h.OrderList)
+		ri.Get("/balance", h.GetBalance)
+		ri.Post("/withdraw", h.Withdraw)
+		ri.Get("/withdrawals", h.Withdrawals)
 	})
 
 	r.Get("/api/orders/{number}", h.EchoAccrualHandler)
