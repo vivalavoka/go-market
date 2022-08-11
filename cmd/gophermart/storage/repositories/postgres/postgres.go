@@ -199,7 +199,7 @@ func (r *PostgresDB) DecreaseUserBalance(userID users.PostgresPK, value int16) s
 
 func (r *PostgresDB) GetOrder(orderId string) (*users.UserOrder, error) {
 	var data []users.UserOrder
-	err := r.connection.Select(&data, `SELECT number, status, accrual, uploaded_at FROM user_orders WHERE number = $1 LIMIT 1;`, orderId)
+	err := r.connection.Select(&data, `SELECT user_id, number, status, accrual, uploaded_at FROM user_orders WHERE number = $1 LIMIT 1;`, orderId)
 
 	if len(data) == 0 {
 		return nil, nil
