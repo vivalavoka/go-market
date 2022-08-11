@@ -155,7 +155,7 @@ func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	h.storage.Repo.UpsertOrder(&users.UserOrder{UserId: session.ID, Number: users.PostgresPK(orderId), Status: users.New})
+	h.storage.Repo.UpsertOrder(&users.UserOrder{UserId: session.ID, Number: param, Status: users.New})
 
 	w.WriteHeader(http.StatusAccepted)
 }

@@ -33,7 +33,7 @@ const (
 
 type UserOrder struct {
 	UserId     PostgresPK `json:"user_id,omitempty" db:"user_id"`
-	Number     PostgresPK `json:"number" db:"number"`
+	Number     string     `json:"number" db:"number"`
 	Accrual    int16      `json:"accrual,omitempty" db:"accrual"`
 	Status     string     `json:"status" db:"status"`
 	UploadedAt time.Time  `json:"uploaded_at" db:"uploaded_at"`
