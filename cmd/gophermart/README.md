@@ -4,7 +4,5 @@
 приложение.
 
 ## TODO:
-1) Remove cookie to header
-2) Add transactions
 3) Static code
 4) Resolve tests
