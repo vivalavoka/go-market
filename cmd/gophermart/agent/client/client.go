@@ -13,7 +13,6 @@ type AccrualResponse struct {
 }
 
 type Client struct {
-	address    string
 	restClient *resty.Client
 }
 
@@ -24,7 +23,8 @@ func New(address string) *Client {
 			return r.StatusCode() == http.StatusTooManyRequests
 		},
 	)
-	return &Client{address: address, restClient: client}
+	client.SetHostURL(address)
+	return &Client{restClient: client}
 }
 
 func (c *Client) GetAccrual(number string) (*AccrualResponse, error) {
@@ -34,10 +34,9 @@ func (c *Client) GetAccrual(number string) (*AccrualResponse, error) {
 		ForceContentType("application/json").
 		SetHeader("Content-Type", "application/json").
 		SetPathParams(map[string]string{
-			"address": c.address,
-			"number":  number,
+			"number": number,
 		}).
-		Get("http://{address}/api/orders/{number}")
+		Get("/api/orders/{number}")
 
 	return response, err
 }

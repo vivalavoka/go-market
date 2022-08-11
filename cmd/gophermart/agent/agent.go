@@ -10,7 +10,7 @@ import (
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
 )
 
-const SYNC_INTERVAL = time.Duration(2 * time.Second)
+const SYNC_INTERVAL = time.Duration(500 * time.Millisecond)
 
 type Agent struct {
 	config  config.Config
