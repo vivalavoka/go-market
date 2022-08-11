@@ -26,13 +26,13 @@ type User struct {
 
 const (
 	New        string = "NEW"
-	Processing        = "PROCESSING"
-	Invalid           = "INVALID"
-	Processed         = "PROCESSED"
+	Processing string = "PROCESSING"
+	Invalid    string = "INVALID"
+	Processed  string = "PROCESSED"
 )
 
 type UserOrder struct {
-	UserId     PostgresPK `json:"user_id,omitempty" db:"user_id"`
+	UserID     PostgresPK `json:"user_id,omitempty" db:"user_id"`
 	Number     string     `json:"number" db:"number"`
 	Accrual    int16      `json:"accrual,omitempty" db:"accrual"`
 	Status     string     `json:"status" db:"status"`
@@ -40,7 +40,7 @@ type UserOrder struct {
 }
 
 type UserWithdraw struct {
-	UserId      PostgresPK `json:"user_id,omitempty" db:"user_id"`
+	UserID      PostgresPK `json:"user_id,omitempty" db:"user_id"`
 	Number      string     `json:"order" db:"number"`
 	Sum         int16      `json:"sum,omitempty" db:"sum"`
 	ProcessedAt time.Time  `json:"processed_at" db:"processed_at"`

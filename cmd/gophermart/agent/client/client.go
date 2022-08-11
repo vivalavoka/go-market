@@ -23,7 +23,7 @@ func New(address string) *Client {
 			return r.StatusCode() == http.StatusTooManyRequests
 		},
 	)
-	client.SetHostURL(address)
+	client.SetBaseURL(address)
 	return &Client{restClient: client}
 }
 

@@ -144,7 +144,7 @@ func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	session := middlewares.GetUserClaim(r.Context())
 
 	if order != nil {
-		if order.UserId == session.ID {
+		if order.UserID == session.ID {
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("номер заказа уже был загружен этим пользователем"))
@@ -155,7 +155,7 @@ func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	h.storage.Repo.UpsertOrder(&users.UserOrder{UserId: session.ID, Number: param, Status: users.New})
+	h.storage.Repo.UpsertOrder(&users.UserOrder{UserID: session.ID, Number: param, Status: users.New})
 
 	w.WriteHeader(http.StatusAccepted)
 }
@@ -218,12 +218,7 @@ func (h *Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	params.UserId = session.ID
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	params.UserID = session.ID
 
 	orderId, err := strconv.ParseInt(params.Number, 10, 64)
 	if err != nil {

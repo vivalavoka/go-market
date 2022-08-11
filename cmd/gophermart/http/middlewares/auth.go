@@ -10,6 +10,9 @@ import (
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
 )
 
+const userIDKey = "user_id"
+const loginKey = "login"
+
 func CheckToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -47,8 +50,8 @@ func CheckToken(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx = context.WithValue(ctx, "user_id", strconv.FormatInt(int64(userClaim.ID), 10))
-		ctx = context.WithValue(ctx, "login", userClaim.Login)
+		ctx = context.WithValue(ctx, userIDKey, strconv.FormatInt(int64(userClaim.ID), 10))
+		ctx = context.WithValue(ctx, loginKey, userClaim.Login)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -61,13 +64,13 @@ func GetUserClaim(ctx context.Context) *users.UserClaims {
 
 	userClaim := users.UserClaims{}
 
-	if userIdStr, ok := ctx.Value("user_id").(string); ok {
-		if userId, err := strconv.ParseInt(userIdStr, 10, 64); err == nil {
-			userClaim.ID = users.PostgresPK(userId)
+	if UserIDStr, ok := ctx.Value(userIDKey).(string); ok {
+		if UserID, err := strconv.ParseInt(UserIDStr, 10, 64); err == nil {
+			userClaim.ID = users.PostgresPK(UserID)
 		}
 	}
 
-	if login, ok := ctx.Value("login").(string); ok {
+	if login, ok := ctx.Value(loginKey).(string); ok {
 		userClaim.Login = login
 	}
 

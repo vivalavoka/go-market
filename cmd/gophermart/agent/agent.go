@@ -10,7 +10,7 @@ import (
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
 )
 
-const SYNC_INTERVAL = time.Duration(500 * time.Millisecond)
+const SyncInterval = time.Duration(500 * time.Millisecond)
 
 type Agent struct {
 	config  config.Config
@@ -35,7 +35,7 @@ func New(cfg config.Config, stg *storage.Storage) *Agent {
 }
 
 func (a *Agent) Start() {
-	syncTicker := time.NewTicker(SYNC_INTERVAL)
+	syncTicker := time.NewTicker(SyncInterval)
 	defer syncTicker.Stop()
 
 	for {
@@ -87,7 +87,7 @@ func (a *Agent) processOrderByAccrual(order users.UserOrder, accrual client.Accr
 		{
 			order.Status = users.Processed
 			order.Accrual = int16(accrual.Accrual)
-			a.storage.Repo.IncreaseUserBalance(order.UserId, order.Accrual)
+			a.storage.Repo.IncreaseUserBalance(order.UserID, order.Accrual)
 		}
 	}
 
