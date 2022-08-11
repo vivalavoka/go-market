@@ -96,8 +96,8 @@ func (r *PostgresDB) createUserTable() error {
 			user_id SERIAL,
 			login VARCHAR UNIQUE,
 			password VARCHAR,
-			current INTEGER DEFAULT 0,
-			withdrawn INTEGER DEFAULT 0
+			current NUMERIC(10, 2) DEFAULT 0,
+			withdrawn NUMERIC(10, 2) DEFAULT 0
 		);`)
 	if rows.Err() != nil {
 		return rows.Err()
@@ -110,7 +110,7 @@ func (r *PostgresDB) createUserOrderTable() error {
 		CREATE TABLE IF NOT EXISTS user_orders (
 			user_id VARCHAR,
 			number VARCHAR UNIQUE,
-			accrual NUMERIC DEFAULT 0,
+			accrual NUMERIC(10, 2) DEFAULT 0,
 			status VARCHAR,
 			uploaded_at TIMESTAMPTZ DEFAULT now()
 		);`)
@@ -125,7 +125,7 @@ func (r *PostgresDB) createWithdrawTable() error {
 		CREATE TABLE IF NOT EXISTS user_withdrawals (
 			user_id VARCHAR,
 			number VARCHAR UNIQUE,
-			sum NUMERIC DEFAULT 0,
+			sum NUMERIC(10, 2) DEFAULT 0,
 			processed_at TIMESTAMPTZ DEFAULT now()
 		);`)
 	if rows.Err() != nil {

@@ -31,7 +31,7 @@ func (h *Handlers) EchoAccrualHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	number := chi.URLParam(r, "number")
-	w.Write([]byte(fmt.Sprintf(`{"order": "%s","status": "PROCESSED","accrual": 500}`, number)))
+	w.Write([]byte(fmt.Sprintf(`{"order": "%s","status": "PROCESSED","accrual": 120.87}`, number)))
 }
 
 func (h *Handlers) auth(w http.ResponseWriter, params *users.User) {
