@@ -137,7 +137,7 @@ func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	order, pgErr := h.storage.Repo.GetOrder(param)
 
 	if pgErr != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, pgErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
