@@ -9,7 +9,7 @@ import (
 type AccrualResponse struct {
 	Order   string
 	Status  string
-	Accrual int
+	Accrual float32
 }
 
 type Client struct {

@@ -12,8 +12,8 @@ type MetricsRepoInterface interface {
 	CreateUser(*users.User) string
 	GetUserByLogin(string) (*users.User, error)
 	GetUserBalance(users.PostgresPK) (*users.User, error)
-	IncreaseUserBalance(users.PostgresPK, int16) string
-	DecreaseUserBalance(users.PostgresPK, int16) string
+	IncreaseUserBalance(users.PostgresPK, float32) string
+	DecreaseUserBalance(users.PostgresPK, float32) string
 	GetOrder(string) (*users.UserOrder, error)
 	UpsertOrder(*users.UserOrder) string
 	GetOrderList(users.PostgresPK) ([]users.UserOrder, error)

@@ -86,7 +86,7 @@ func (a *Agent) processOrderByAccrual(order users.UserOrder, accrual client.Accr
 	case "PROCESSED":
 		{
 			order.Status = users.Processed
-			order.Accrual = int16(accrual.Accrual)
+			order.Accrual = float32(accrual.Accrual)
 			a.storage.Repo.IncreaseUserBalance(order.UserID, order.Accrual)
 		}
 	}

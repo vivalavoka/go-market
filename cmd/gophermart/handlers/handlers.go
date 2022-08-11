@@ -90,7 +90,7 @@ func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "User already exists", http.StatusConflict)
 			return
 		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, errCode, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -123,13 +123,13 @@ func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	buf.ReadFrom(r.Body)
 	param := buf.String()
 
-	orderId, err := strconv.ParseInt(param, 10, 64)
+	orderID, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if !luhn.Valid(orderId) {
+	if !luhn.Valid(orderID) {
 		http.Error(w, "Invalid order id format", http.StatusUnprocessableEntity)
 		return
 	}
@@ -220,13 +220,13 @@ func (h *Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 	}
 	params.UserID = session.ID
 
-	orderId, err := strconv.ParseInt(params.Number, 10, 64)
+	orderID, err := strconv.ParseInt(params.Number, 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if !luhn.Valid(orderId) {
+	if !luhn.Valid(orderID) {
 		http.Error(w, "Invalid order id format", http.StatusUnprocessableEntity)
 		return
 	}

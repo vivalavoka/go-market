@@ -10,8 +10,10 @@ import (
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
 )
 
-const userIDKey = "user_id"
-const loginKey = "login"
+type claimKey string
+
+const userIDKey claimKey = "user_id"
+const loginKey claimKey = "login"
 
 func CheckToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

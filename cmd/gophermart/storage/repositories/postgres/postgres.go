@@ -66,10 +66,6 @@ func New(cfg config.Config) (*PostgresDB, error) {
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	return &postgres, nil
 }
 
@@ -114,7 +110,7 @@ func (r *PostgresDB) createUserOrderTable() error {
 		CREATE TABLE IF NOT EXISTS user_orders (
 			user_id VARCHAR,
 			number VARCHAR UNIQUE,
-			accrual INTEGER DEFAULT 0,
+			accrual NUMERIC DEFAULT 0,
 			status VARCHAR,
 			uploaded_at TIMESTAMPTZ DEFAULT now()
 		);`)
@@ -129,7 +125,7 @@ func (r *PostgresDB) createWithdrawTable() error {
 		CREATE TABLE IF NOT EXISTS user_withdrawals (
 			user_id VARCHAR,
 			number VARCHAR UNIQUE,
-			sum INTEGER DEFAULT 0,
+			sum NUMERIC DEFAULT 0,
 			processed_at TIMESTAMPTZ DEFAULT now()
 		);`)
 	if rows.Err() != nil {
@@ -187,7 +183,7 @@ func (r *PostgresDB) GetUserBalance(UserID users.PostgresPK) (*users.User, error
 	return &data[0], nil
 }
 
-func (r *PostgresDB) IncreaseUserBalance(UserID users.PostgresPK, value int16) string {
+func (r *PostgresDB) IncreaseUserBalance(UserID users.PostgresPK, value float32) string {
 	_, err := r.increaseBalanceStmt.Exec(value, UserID)
 
 	if err != nil {
@@ -197,7 +193,7 @@ func (r *PostgresDB) IncreaseUserBalance(UserID users.PostgresPK, value int16) s
 	return ""
 }
 
-func (r *PostgresDB) DecreaseUserBalance(UserID users.PostgresPK, value int16) string {
+func (r *PostgresDB) DecreaseUserBalance(UserID users.PostgresPK, value float32) string {
 	_, err := r.decreaseBalanceStmt.Exec(value, UserID)
 
 	if err != nil {
