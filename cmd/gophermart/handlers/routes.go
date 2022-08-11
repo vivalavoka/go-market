@@ -15,7 +15,7 @@ func (h *Handlers) SetRoutes(r chi.Router) chi.Router {
 		ri.Get("/orders", h.OrderList)
 		ri.Get("/balance", h.GetBalance)
 		ri.Post("/balance/withdraw", h.Withdraw)
-		ri.Get("/balance/withdrawals", h.Withdrawals)
+		ri.Get("/withdrawals", h.Withdrawals)
 	})
 
 	r.Get("/api/orders/{number}", h.EchoAccrualHandler)
