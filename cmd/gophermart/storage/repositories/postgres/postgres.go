@@ -162,9 +162,9 @@ func (r *PostgresDB) GetUserByLogin(login string) (*users.User, error) {
 	return &data[0], nil
 }
 
-func (r *PostgresDB) GetUserBalance(userId users.PostgresPK) (*users.User, error) {
+func (r *PostgresDB) GetUserBalance(userID users.PostgresPK) (*users.User, error) {
 	var data []users.User
-	err := r.connection.Select(&data, `SELECT current, withdrawn FROM users WHERE user_id = $1 LIMIT 1;`, userId)
+	err := r.connection.Select(&data, `SELECT current, withdrawn FROM users WHERE user_id = $1 LIMIT 1;`, userID)
 
 	if len(data) == 0 {
 		return nil, nil
@@ -197,9 +197,9 @@ func (r *PostgresDB) DecreaseUserBalance(userID users.PostgresPK, value int16) s
 	return ""
 }
 
-func (r *PostgresDB) GetOrder(orderId users.PostgresPK) (*users.UserOrder, error) {
+func (r *PostgresDB) GetOrder(orderId string) (*users.UserOrder, error) {
 	var data []users.UserOrder
-	err := r.connection.Select(&data, `SELECT number, status, accrual, uploaded_at FROM user_orders WHERE order_id = $1 LIMIT 1;`, orderId)
+	err := r.connection.Select(&data, `SELECT number, status, accrual, uploaded_at FROM user_orders WHERE number = $1 LIMIT 1;`, orderId)
 
 	if len(data) == 0 {
 		return nil, nil
@@ -222,9 +222,9 @@ func (r *PostgresDB) UpsertOrder(userOrder *users.UserOrder) string {
 	return ""
 }
 
-func (r *PostgresDB) GetOrderList(userId users.PostgresPK) ([]users.UserOrder, error) {
+func (r *PostgresDB) GetOrderList(userID users.PostgresPK) ([]users.UserOrder, error) {
 	var data []users.UserOrder
-	err := r.connection.Select(&data, `SELECT number, status, accrual, uploaded_at FROM user_orders WHERE user_id = $1 ORDER BY uploaded_at ASC;`, userId)
+	err := r.connection.Select(&data, `SELECT number, status, accrual, uploaded_at FROM user_orders WHERE user_id = $1 ORDER BY uploaded_at ASC;`, userID)
 
 	if err != nil {
 		return nil, err
@@ -254,9 +254,9 @@ func (r *PostgresDB) CreateWithdraw(withdraw users.UserWithdraw) string {
 	return ""
 }
 
-func (r *PostgresDB) GetWithdrawals(userId users.PostgresPK) ([]users.UserWithdraw, error) {
+func (r *PostgresDB) GetWithdrawals(userID users.PostgresPK) ([]users.UserWithdraw, error) {
 	var data []users.UserWithdraw
-	err := r.connection.Select(&data, `SELECT number, sum, processed_at FROM user_withdrawals WHERE user_id = $1 ORDER BY processed_at ASC;`, userId)
+	err := r.connection.Select(&data, `SELECT number, sum, processed_at FROM user_withdrawals WHERE user_id = $1 ORDER BY processed_at ASC;`, userID)
 
 	if err != nil {
 		return nil, err
