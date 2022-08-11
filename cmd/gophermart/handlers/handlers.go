@@ -34,41 +34,7 @@ func (h *Handlers) EchoAccrualHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(`{"order": "%s","status": "PROCESSED","accrual": 500}`, number)))
 }
 
-func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
-	var params *users.User
-
-	err := json.NewDecoder(r.Body).Decode(&params)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	errCode := h.storage.Repo.CreateUser(params)
-
-	if errCode != "" {
-		if errCode == "23505" {
-			http.Error(w, "User already exists", http.StatusConflict)
-			return
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
-}
-
-func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
-	var params *users.User
-
-	err := json.NewDecoder(r.Body).Decode(&params)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+func (h *Handlers) auth(w http.ResponseWriter, params *users.User) {
 	user, err := h.storage.Repo.GetUserByLogin(params.Login)
 
 	if err != nil {
@@ -105,6 +71,47 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 		Value:   tokenString,
 		Expires: expirationTime,
 	})
+
+}
+
+func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
+	var params *users.User
+
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	errCode := h.storage.Repo.CreateUser(params)
+
+	if errCode != "" {
+		if errCode == "23505" {
+			http.Error(w, "User already exists", http.StatusConflict)
+			return
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	h.auth(w, params)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
+}
+
+func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
+	var params *users.User
+
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	h.auth(w, params)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
