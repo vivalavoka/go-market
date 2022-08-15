@@ -162,9 +162,19 @@ func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	tx, txErr := h.storage.Repo.BeginTx(r.Context())
+	if txErr != nil {
+		http.Error(w, txErr.Error(), http.StatusInternalServerError)
+	}
+	defer tx.Rollback()
 
-	err = h.storage.Repo.UpsertOrder(&users.UserOrder{UserID: session.ID, Number: param, Status: users.New})
+	err = h.storage.Repo.UpsertOrder(tx, &users.UserOrder{UserID: session.ID, Number: param, Status: users.New})
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -251,14 +261,25 @@ func (h *Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.storage.Repo.DecreaseUserBalance(session.ID, params.Sum)
+	tx, txErr := h.storage.Repo.BeginTx(r.Context())
+	if txErr != nil {
+		http.Error(w, txErr.Error(), http.StatusInternalServerError)
+	}
+	defer tx.Rollback()
+
+	err = h.storage.Repo.DecreaseUserBalance(tx, session.ID, params.Sum)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = h.storage.Repo.CreateWithdraw(*params)
+	err = h.storage.Repo.CreateWithdraw(tx, *params)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

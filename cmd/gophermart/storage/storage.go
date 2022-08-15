@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"context"
+	"database/sql"
+
 	"github.com/vivalavoka/go-market/cmd/gophermart/config"
 	postgresdb "github.com/vivalavoka/go-market/cmd/gophermart/storage/repositories/postgres"
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
@@ -9,16 +12,17 @@ import (
 type MarketRepoInterface interface {
 	Close()
 	CheckConnection() bool
+	BeginTx(context.Context) (*sql.Tx, error)
 	CreateUser(*users.User) error
 	GetUserByLogin(string) (*users.User, error)
 	GetUserBalance(users.PostgresPK) (*users.User, error)
-	IncreaseUserBalance(users.PostgresPK, float32) error
-	DecreaseUserBalance(users.PostgresPK, float32) error
+	IncreaseUserBalance(*sql.Tx, users.PostgresPK, float32) error
+	DecreaseUserBalance(*sql.Tx, users.PostgresPK, float32) error
 	GetOrder(string) (*users.UserOrder, error)
-	UpsertOrder(*users.UserOrder) error
+	UpsertOrder(*sql.Tx, *users.UserOrder) error
 	GetOrderList(users.PostgresPK) ([]users.UserOrder, error)
 	GetOrdersByStatus(status string) ([]users.UserOrder, error)
-	CreateWithdraw(users.UserWithdraw) error
+	CreateWithdraw(*sql.Tx, users.UserWithdraw) error
 	GetWithdrawals(users.PostgresPK) ([]users.UserWithdraw, error)
 }
 

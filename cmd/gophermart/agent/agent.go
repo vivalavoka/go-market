@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -73,6 +74,13 @@ func (a *Agent) accrualOrders(orders []users.UserOrder) {
 }
 
 func (a *Agent) processOrderByAccrual(order users.UserOrder, accrual client.AccrualResponse) {
+	tx, txErr := a.storage.Repo.BeginTx(context.Background())
+	if txErr != nil {
+		log.Error(txErr)
+		return
+	}
+	defer tx.Rollback()
+
 	switch accrual.Status {
 	case "REGISTERED":
 		return
@@ -84,15 +92,21 @@ func (a *Agent) processOrderByAccrual(order users.UserOrder, accrual client.Accr
 		{
 			order.Status = users.Processed
 			order.Accrual = float32(accrual.Accrual)
-			err := a.storage.Repo.IncreaseUserBalance(order.UserID, order.Accrual)
+			err := a.storage.Repo.IncreaseUserBalance(tx, order.UserID, order.Accrual)
 			if err != nil {
 				log.Error(err)
+				return
 			}
 		}
 	}
 
-	err := a.storage.Repo.UpsertOrder(&order)
+	err := a.storage.Repo.UpsertOrder(tx, &order)
 	if err != nil {
 		log.Error(err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Error(err)
+		return
 	}
 }
