@@ -144,7 +144,7 @@ func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 	order, pgErr := h.storage.Repo.GetOrder(param)
 
-	if pgErr != nil {
+	if pgErr != nil && !errors.Is(err, postgresdb.ErrNotFound) {
 		http.Error(w, pgErr.Error(), http.StatusInternalServerError)
 		return
 	}
