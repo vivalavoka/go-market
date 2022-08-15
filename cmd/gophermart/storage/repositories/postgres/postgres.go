@@ -2,13 +2,15 @@ package postgresdb
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	pg "github.com/lib/pq"
 	"github.com/vivalavoka/go-market/cmd/gophermart/config"
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
 )
+
+var ErrNotFound = errors.New("not found")
 
 type PostgresDB struct {
 	config                 config.Config
@@ -143,14 +145,13 @@ func (r *PostgresDB) CheckConnection() bool {
 	return err == nil
 }
 
-func (r *PostgresDB) CreateUser(user *users.User) string {
+func (r *PostgresDB) CreateUser(user *users.User) error {
 	_, err := r.createUserStmt.Exec(user.Login, user.Password)
 
 	if err != nil {
-		pgError := err.(*pg.Error)
-		return fmt.Sprint(pgError.Code)
+		return err
 	}
-	return ""
+	return nil
 }
 
 func (r *PostgresDB) GetUserByLogin(login string) (*users.User, error) {
@@ -158,7 +159,7 @@ func (r *PostgresDB) GetUserByLogin(login string) (*users.User, error) {
 	err := r.connection.Select(&data, `SELECT user_id, login, password FROM users WHERE login = $1 LIMIT 1;`, login)
 
 	if len(data) == 0 {
-		return nil, nil
+		return nil, ErrNotFound
 	}
 
 	if err != nil {
@@ -173,7 +174,7 @@ func (r *PostgresDB) GetUserBalance(UserID users.PostgresPK) (*users.User, error
 	err := r.connection.Select(&data, `SELECT current, withdrawn FROM users WHERE user_id = $1 LIMIT 1;`, UserID)
 
 	if len(data) == 0 {
-		return nil, nil
+		return nil, ErrNotFound
 	}
 
 	if err != nil {
@@ -183,24 +184,22 @@ func (r *PostgresDB) GetUserBalance(UserID users.PostgresPK) (*users.User, error
 	return &data[0], nil
 }
 
-func (r *PostgresDB) IncreaseUserBalance(UserID users.PostgresPK, value float32) string {
+func (r *PostgresDB) IncreaseUserBalance(UserID users.PostgresPK, value float32) error {
 	_, err := r.increaseBalanceStmt.Exec(value, UserID)
 
 	if err != nil {
-		pgError := err.(*pg.Error)
-		return fmt.Sprint(pgError.Code)
+		return err
 	}
-	return ""
+	return nil
 }
 
-func (r *PostgresDB) DecreaseUserBalance(UserID users.PostgresPK, value float32) string {
+func (r *PostgresDB) DecreaseUserBalance(UserID users.PostgresPK, value float32) error {
 	_, err := r.decreaseBalanceStmt.Exec(value, UserID)
 
 	if err != nil {
-		pgError := err.(*pg.Error)
-		return fmt.Sprint(pgError.Code)
+		return err
 	}
-	return ""
+	return nil
 }
 
 func (r *PostgresDB) GetOrder(orderID string) (*users.UserOrder, error) {
@@ -208,7 +207,7 @@ func (r *PostgresDB) GetOrder(orderID string) (*users.UserOrder, error) {
 	err := r.connection.Select(&data, `SELECT user_id, number, status, accrual, uploaded_at FROM user_orders WHERE number = $1 LIMIT 1;`, orderID)
 
 	if len(data) == 0 {
-		return nil, nil
+		return nil, ErrNotFound
 	}
 
 	if err != nil {
@@ -218,14 +217,13 @@ func (r *PostgresDB) GetOrder(orderID string) (*users.UserOrder, error) {
 	return &data[0], nil
 }
 
-func (r *PostgresDB) UpsertOrder(userOrder *users.UserOrder) string {
+func (r *PostgresDB) UpsertOrder(userOrder *users.UserOrder) error {
 	_, err := r.upsertOrderStmt.Exec(userOrder.UserID, userOrder.Number, userOrder.Status, userOrder.Accrual)
 
 	if err != nil {
-		pgError := err.(*pg.Error)
-		return fmt.Sprint(pgError.Code)
+		return err
 	}
-	return ""
+	return nil
 }
 
 func (r *PostgresDB) GetOrderList(UserID users.PostgresPK) ([]users.UserOrder, error) {
@@ -250,14 +248,13 @@ func (r *PostgresDB) GetOrdersByStatus(status string) ([]users.UserOrder, error)
 	return data, nil
 }
 
-func (r *PostgresDB) CreateWithdraw(withdraw users.UserWithdraw) string {
+func (r *PostgresDB) CreateWithdraw(withdraw users.UserWithdraw) error {
 	_, err := r.createUserWithdrawStmt.Exec(withdraw.UserID, withdraw.Number, withdraw.Sum)
 
 	if err != nil {
-		pgError := err.(*pg.Error)
-		return fmt.Sprint(pgError.Code)
+		return err
 	}
-	return ""
+	return nil
 }
 
 func (r *PostgresDB) GetWithdrawals(UserID users.PostgresPK) ([]users.UserWithdraw, error) {

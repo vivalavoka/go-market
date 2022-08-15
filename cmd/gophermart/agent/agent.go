@@ -12,24 +12,21 @@ import (
 
 const SyncInterval = time.Duration(500 * time.Millisecond)
 
+type ClientInterface interface {
+	GetAccrual(string) (*client.AccrualResponse, error)
+}
+
 type Agent struct {
 	config  config.Config
-	client  *client.Client
+	client  ClientInterface
 	storage *storage.Storage
 }
 
-type AccrualResponse struct {
-	Order   string
-	Status  string
-	Accrual int
-}
-
-func New(cfg config.Config, stg *storage.Storage) *Agent {
-	client := client.New(cfg.AccrualSystemAddress)
+func New(cfg config.Config, stg *storage.Storage, clnt ClientInterface) *Agent {
 
 	return &Agent{
 		config:  cfg,
-		client:  client,
+		client:  clnt,
 		storage: stg,
 	}
 }
@@ -87,9 +84,15 @@ func (a *Agent) processOrderByAccrual(order users.UserOrder, accrual client.Accr
 		{
 			order.Status = users.Processed
 			order.Accrual = float32(accrual.Accrual)
-			a.storage.Repo.IncreaseUserBalance(order.UserID, order.Accrual)
+			err := a.storage.Repo.IncreaseUserBalance(order.UserID, order.Accrual)
+			if err != nil {
+				log.Error(err)
+			}
 		}
 	}
 
-	a.storage.Repo.UpsertOrder(&order)
+	err := a.storage.Repo.UpsertOrder(&order)
+	if err != nil {
+		log.Error(err)
+	}
 }

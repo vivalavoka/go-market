@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,9 +11,11 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/chi/v5"
+	"github.com/omeid/pgerror"
 	"github.com/vivalavoka/go-market/cmd/gophermart/config"
 	"github.com/vivalavoka/go-market/cmd/gophermart/http/middlewares"
 	"github.com/vivalavoka/go-market/cmd/gophermart/storage"
+	postgresdb "github.com/vivalavoka/go-market/cmd/gophermart/storage/repositories/postgres"
 	"github.com/vivalavoka/go-market/cmd/gophermart/users"
 	"github.com/vivalavoka/go-market/internal/luhn"
 )
@@ -38,11 +41,16 @@ func (h *Handlers) auth(w http.ResponseWriter, params *users.User) {
 	user, err := h.storage.Repo.GetUserByLogin(params.Login)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if errors.Is(err, postgresdb.ErrNotFound) {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
-	if user == nil || user.Password != params.Password {
+	if user.Password != params.Password {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -83,14 +91,14 @@ func (h *Handlers) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errCode := h.storage.Repo.CreateUser(params)
+	err = h.storage.Repo.CreateUser(params)
 
-	if errCode != "" {
-		if errCode == "23505" {
+	if err != nil {
+		if e := pgerror.UniqueViolation(err); e != nil {
 			http.Error(w, "User already exists", http.StatusConflict)
 			return
 		} else {
-			http.Error(w, errCode, http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -155,7 +163,11 @@ func (h *Handlers) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	h.storage.Repo.UpsertOrder(&users.UserOrder{UserID: session.ID, Number: param, Status: users.New})
+	err = h.storage.Repo.UpsertOrder(&users.UserOrder{UserID: session.ID, Number: param, Status: users.New})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusAccepted)
 }
@@ -177,8 +189,7 @@ func (h *Handlers) OrderList(w http.ResponseWriter, r *http.Request) {
 
 	response, err := json.Marshal(orders)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(err.Error()))
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
@@ -192,15 +203,13 @@ func (h *Handlers) GetBalance(w http.ResponseWriter, r *http.Request) {
 
 	balance, pgErr := h.storage.Repo.GetUserBalance(session.ID)
 	if pgErr != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(pgErr.Error()))
+		http.Error(w, pgErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	response, err := json.Marshal(balance)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(err.Error()))
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
@@ -242,8 +251,17 @@ func (h *Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.storage.Repo.DecreaseUserBalance(session.ID, params.Sum)
-	h.storage.Repo.CreateWithdraw(*params)
+	err = h.storage.Repo.DecreaseUserBalance(session.ID, params.Sum)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.storage.Repo.CreateWithdraw(*params)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
